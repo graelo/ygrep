@@ -197,6 +197,7 @@ mod tests {
             score: 0.8,
             is_chunk: false,
             doc_id: "abc123".to_string(),
+            match_type: MatchType::Text,
         };
         assert_eq!(hit.lines_str(), "10-25");
 
