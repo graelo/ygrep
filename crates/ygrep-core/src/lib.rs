@@ -528,13 +528,17 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn test_workspace_open() -> Result<()> {
+    fn test_workspace_create() -> Result<()> {
         let temp_dir = tempdir().unwrap();
 
-        // Create a test file
-        std::fs::write(temp_dir.path().join("test.rs"), "fn main() {}").unwrap();
+        // Create a non-hidden workspace directory (tempdir creates .tmpXXX which is filtered as hidden)
+        let workspace_dir = temp_dir.path().join("workspace");
+        std::fs::create_dir_all(&workspace_dir).unwrap();
 
-        let workspace = Workspace::open(temp_dir.path())?;
+        // Create a test file
+        std::fs::write(workspace_dir.join("test.rs"), "fn main() {}").unwrap();
+
+        let workspace = Workspace::create(&workspace_dir)?;
         assert!(workspace.root().exists());
 
         Ok(())
@@ -544,14 +548,18 @@ mod tests {
     fn test_workspace_index_and_search() -> Result<()> {
         let temp_dir = tempdir().unwrap();
 
+        // Create a non-hidden workspace directory (tempdir creates .tmpXXX which is filtered as hidden)
+        let workspace_dir = temp_dir.path().join("workspace");
+        std::fs::create_dir_all(&workspace_dir).unwrap();
+
         // Create test files
-        std::fs::write(temp_dir.path().join("hello.rs"), "fn hello_world() { println!(\"Hello!\"); }").unwrap();
-        std::fs::write(temp_dir.path().join("goodbye.rs"), "fn goodbye_world() { println!(\"Bye!\"); }").unwrap();
+        std::fs::write(workspace_dir.join("hello.rs"), "fn hello_world() { println!(\"Hello!\"); }").unwrap();
+        std::fs::write(workspace_dir.join("goodbye.rs"), "fn goodbye_world() { println!(\"Bye!\"); }").unwrap();
 
         let mut config = Config::default();
         config.indexer.data_dir = temp_dir.path().join("data");
 
-        let workspace = Workspace::open_with_config(temp_dir.path(), config)?;
+        let workspace = Workspace::create_with_config(&workspace_dir, config)?;
 
         // Index
         let stats = workspace.index_all()?;
