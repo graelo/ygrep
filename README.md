@@ -273,6 +273,8 @@ Index data stored in:
 - macOS: `~/Library/Application Support/ygrep/indexes/`
 - Linux: `~/.local/share/ygrep/indexes/`
 
+XDG environment variables (`XDG_DATA_HOME`, `XDG_CONFIG_HOME`, `XDG_RUNTIME_DIR`) are honored on all platforms, including macOS.
+
 ## Upgrading
 
 ```bash
