@@ -316,14 +316,18 @@ mod tests {
     fn test_walk_directory() {
         let temp_dir = tempdir().unwrap();
 
+        // Create a non-hidden workspace directory (tempdir creates .tmpXXX which is filtered as hidden)
+        let workspace_dir = temp_dir.path().join("workspace");
+        std::fs::create_dir_all(&workspace_dir).unwrap();
+
         // Create some files
-        std::fs::write(temp_dir.path().join("test.rs"), "fn main() {}").unwrap();
-        std::fs::write(temp_dir.path().join("readme.md"), "# Hello").unwrap();
-        std::fs::create_dir(temp_dir.path().join("src")).unwrap();
-        std::fs::write(temp_dir.path().join("src/lib.rs"), "pub mod lib;").unwrap();
+        std::fs::write(workspace_dir.join("test.rs"), "fn main() {}").unwrap();
+        std::fs::write(workspace_dir.join("readme.md"), "# Hello").unwrap();
+        std::fs::create_dir(workspace_dir.join("src")).unwrap();
+        std::fs::write(workspace_dir.join("src/lib.rs"), "pub mod lib;").unwrap();
 
         let config = IndexerConfig::default();
-        let mut walker = FileWalker::new(temp_dir.path().to_path_buf(), config).unwrap();
+        let mut walker = FileWalker::new(workspace_dir, config).unwrap();
 
         let entries: Vec<_> = walker.walk().collect();
         assert!(entries.len() >= 3);
