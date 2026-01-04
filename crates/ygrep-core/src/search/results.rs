@@ -211,6 +211,8 @@ mod tests {
 
     #[test]
     fn test_format_ai() {
+        // Note: display_score scales by 3000x since RRF scores are tiny (~0.01)
+        // score of 0.03 * 3000 = 90%
         let result = SearchResult {
             hits: vec![
                 SearchHit {
@@ -218,7 +220,7 @@ mod tests {
                     line_start: 1,
                     line_end: 10,
                     snippet: "fn main() {\n    println!(\"hello\");\n}".to_string(),
-                    score: 0.9,
+                    score: 0.03,
                     is_chunk: false,
                     doc_id: "abc".to_string(),
                     match_type: MatchType::Text,
