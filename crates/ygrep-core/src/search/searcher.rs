@@ -375,7 +375,7 @@ fn create_regex_snippet(content: &str, regex: &regex::Regex, max_lines: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::index::schema::build_document_schema;
+    use crate::index::schema::{build_document_schema, register_tokenizers};
     use tantivy::doc;
     use tempfile::tempdir;
 
@@ -387,6 +387,9 @@ mod tests {
         // Create index with schema
         let schema = build_document_schema();
         let index = Index::create_in_dir(index_path, schema.clone())?;
+
+        // Register custom code tokenizer
+        register_tokenizers(index.tokenizers());
 
         let fields = SchemaFields::new(&schema);
 

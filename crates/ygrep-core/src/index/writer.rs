@@ -269,7 +269,7 @@ impl Indexer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::index::schema::build_document_schema;
+    use crate::index::schema::{build_document_schema, register_tokenizers};
     use tempfile::tempdir;
 
     #[test]
@@ -285,6 +285,9 @@ mod tests {
         // Create index
         let schema = build_document_schema();
         let index = Index::create_in_dir(&index_path, schema)?;
+
+        // Register custom code tokenizer
+        register_tokenizers(index.tokenizers());
 
         let config = IndexerConfig::default();
         let indexer = Indexer::new(config, index, temp_dir.path())?;
