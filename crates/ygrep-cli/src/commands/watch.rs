@@ -86,7 +86,7 @@ pub fn run(workspace_path: &Path) -> Result<()> {
             }
 
             // Print periodic stats
-            if (changed_count + deleted_count) % 100 == 0 && (changed_count + deleted_count) > 0 {
+            if (changed_count + deleted_count).is_multiple_of(100) && (changed_count + deleted_count) > 0 {
                 eprintln!("\n--- Stats: {} indexed, {} deleted, {} errors ---\n",
                     changed_count, deleted_count, error_count);
             }

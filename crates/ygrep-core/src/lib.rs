@@ -220,10 +220,7 @@ impl Workspace {
             // These don't embed well or are too slow
             let filtered_batch: Vec<_> = embedding_batch
                 .into_iter()
-                .filter(|(_, content)| {
-                    let len = content.len();
-                    len >= 50 && len <= 50_000
-                })
+                .filter(|(_, content)| (50..=50_000).contains(&content.len()))
                 .collect();
 
             if filtered_batch.is_empty() {
@@ -464,8 +461,7 @@ impl Workspace {
                 if with_embeddings {
                     if let Ok(content) = std::fs::read_to_string(path) {
                         // Only embed files within size bounds
-                        let len = content.len();
-                        if len >= 50 && len <= 50_000 {
+                        if (50..=50_000).contains(&content.len()) {
                             // Truncate for embedding
                             const EMBED_TRUNCATE: usize = 4096;
                             let text = if content.len() > EMBED_TRUNCATE {

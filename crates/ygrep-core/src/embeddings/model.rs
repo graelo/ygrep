@@ -9,11 +9,12 @@ use fastembed::{TextEmbedding, InitOptions, EmbeddingModel as FastEmbedModel};
 use crate::error::{Result, YgrepError};
 
 /// Supported embedding models
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum ModelType {
     /// BGE Small - Fast, ~50MB, 384 dimensions
     BgeSmall,
     /// All-MiniLM-L6 - Very fast, ~25MB, 384 dimensions
+    #[default]
     AllMiniLmL6,
 }
 
@@ -32,17 +33,11 @@ impl ModelType {
         }
     }
 
-    fn to_fastembed(&self) -> FastEmbedModel {
+    fn to_fastembed(self) -> FastEmbedModel {
         match self {
             ModelType::BgeSmall => FastEmbedModel::BGESmallENV15,
             ModelType::AllMiniLmL6 => FastEmbedModel::AllMiniLML6V2,
         }
-    }
-}
-
-impl Default for ModelType {
-    fn default() -> Self {
-        ModelType::AllMiniLmL6
     }
 }
 

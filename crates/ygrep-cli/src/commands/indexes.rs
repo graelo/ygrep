@@ -1,6 +1,6 @@
 use anyhow::{Result, Context};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Get the indexes directory
 fn get_indexes_dir() -> Result<PathBuf> {
@@ -215,7 +215,7 @@ pub fn remove(identifier: &str) -> Result<()> {
             if let Some(hash) = path.file_name().and_then(|n| n.to_str()) {
                 if let Ok(info) = read_index_info(hash, &path) {
                     let matches = match (&info.workspace, &target_path) {
-                        (Some(ws), Some(target)) => PathBuf::from(ws) == *target,
+                        (Some(ws), Some(target)) => Path::new(ws) == target,
                         (Some(ws), None) => ws.contains(identifier),
                         _ => false,
                     };

@@ -326,7 +326,7 @@ pub fn install_codex() -> Result<()> {
     };
 
     if !content.contains("name: ygrep") {
-        content.push_str("\n");
+        content.push('\n');
         content.push_str(SKILL_CONTENT);
         fs::write(&agents_path, content)?;
         println!("Added ygrep skill to Codex AGENTS.md");

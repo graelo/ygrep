@@ -145,7 +145,7 @@ impl VectorIndex {
 
         // Insert into HNSW
         let hnsw = self.hnsw.write();
-        hnsw.insert((&embedding.to_vec(), id));
+        hnsw.insert((embedding, id));
 
         Ok(id as u64)
     }

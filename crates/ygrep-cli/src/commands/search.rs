@@ -4,6 +4,7 @@ use ygrep_core::Workspace;
 
 use crate::OutputFormat;
 
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     workspace_path: &Path,
     query: &str,

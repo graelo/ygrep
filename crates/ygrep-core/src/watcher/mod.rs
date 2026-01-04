@@ -331,34 +331,31 @@ fn matches_ignore_pattern(path: &Path, config: &IndexerConfig) -> bool {
 /// Simple glob matching (copied from walker.rs for consistency)
 fn glob_match(pattern: &str, path: &str) -> bool {
     // Handle **/dir/** patterns (match dir anywhere in path)
-    if pattern.starts_with("**/") && pattern.ends_with("/**") {
-        let dir_name = &pattern[3..pattern.len() - 3];
-        return path.contains(&format!("/{}/", dir_name))
-            || path.starts_with(&format!("{}/", dir_name))
-            || path.ends_with(&format!("/{}", dir_name));
+    if let Some(rest) = pattern.strip_prefix("**/") {
+        if let Some(dir_name) = rest.strip_suffix("/**") {
+            return path.contains(&format!("/{}/", dir_name))
+                || path.starts_with(&format!("{}/", dir_name))
+                || path.ends_with(&format!("/{}", dir_name));
+        }
     }
 
     // Handle **/*.ext patterns (match extension anywhere)
-    if pattern.starts_with("**/*.") {
-        let ext = &pattern[5..];
+    if let Some(ext) = pattern.strip_prefix("**/*.") {
         return path.ends_with(&format!(".{}", ext));
     }
 
     // Handle **/something patterns (match at end)
-    if pattern.starts_with("**/") {
-        let suffix = &pattern[3..];
+    if let Some(suffix) = pattern.strip_prefix("**/") {
         return path.ends_with(suffix) || path.ends_with(&format!("/{}", suffix));
     }
 
     // Handle something/** patterns (match at start)
-    if pattern.ends_with("/**") {
-        let prefix = &pattern[..pattern.len() - 3];
+    if let Some(prefix) = pattern.strip_suffix("/**") {
         return path.starts_with(prefix) || path.contains(&format!("/{}", prefix));
     }
 
     // Handle simple * patterns (*.ext)
-    if pattern.starts_with("*.") {
-        let ext = &pattern[2..];
+    if let Some(ext) = pattern.strip_prefix("*.") {
         return path.ends_with(&format!(".{}", ext));
     }
 

@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 /// Global ygrep configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
     /// Daemon configuration
@@ -107,17 +107,6 @@ pub struct OutputConfig {
 
     /// Show scores in output
     pub show_scores: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            daemon: DaemonConfig::default(),
-            indexer: IndexerConfig::default(),
-            search: SearchConfig::default(),
-            output: OutputConfig::default(),
-        }
-    }
 }
 
 impl Default for DaemonConfig {
