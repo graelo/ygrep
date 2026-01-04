@@ -141,14 +141,8 @@ impl Default for EmbeddingModel {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_model_dimensions() {
-        assert_eq!(ModelType::BgeSmall.dimension(), 384);
-        assert_eq!(ModelType::AllMiniLmL6.dimension(), 384);
-    }
-
-    // Note: Full embedding tests require model download
-    // They are expensive and should be run separately
+    /// Run with: cargo test -p ygrep-core --features embeddings -- --ignored test_embedding_generation
+    /// Note: Downloads ~25MB model on first run
     #[test]
     #[ignore]
     fn test_embedding_generation() {

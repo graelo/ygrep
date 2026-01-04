@@ -4,6 +4,7 @@ use walkdir::WalkDir;
 
 use crate::config::IndexerConfig;
 use crate::error::Result;
+use crate::util::glob_match;
 use super::symlink::{SymlinkResolver, ResolvedPath};
 
 /// Walks a directory tree, respecting gitignore and handling symlinks
@@ -207,44 +208,6 @@ fn is_hidden(entry: &walkdir::DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-/// Simple glob matching for ignore patterns (for files)
-fn glob_match(pattern: &str, path: &str) -> bool {
-    // Handle **/dir/** patterns (match dir anywhere in path)
-    if let Some(rest) = pattern.strip_prefix("**/") {
-        if let Some(dir_name) = rest.strip_suffix("/**") {
-            // Check if this directory name appears as a complete path component
-            return path.contains(&format!("/{}/", dir_name))
-                || path.starts_with(&format!("{}/", dir_name))
-                || path.ends_with(&format!("/{}", dir_name));  // At end of path (exact match)
-        }
-    }
-
-    // Handle **/*.ext patterns (match extension anywhere)
-    if let Some(ext) = pattern.strip_prefix("**/*.") {
-        return path.ends_with(&format!(".{}", ext));
-    }
-
-    // Handle **/something patterns (match at end)
-    if let Some(suffix) = pattern.strip_prefix("**/") {
-        return path.ends_with(suffix) || path.ends_with(&format!("/{}", suffix));
-    }
-
-    // Handle something/** patterns (match at start)
-    if let Some(prefix) = pattern.strip_suffix("/**") {
-        return path.starts_with(prefix) || path.contains(&format!("/{}", prefix));
-    }
-
-    // Handle simple * patterns (*.ext)
-    if let Some(ext) = pattern.strip_prefix("*.") {
-        return path.ends_with(&format!(".{}", ext));
-    }
-
-    // Exact match or path component match
-    path == pattern
-        || path.ends_with(&format!("/{}", pattern))
-        || path.contains(&format!("/{}/", pattern))
-}
-
 /// Check if a file is likely a text file
 fn is_text_file(path: &Path) -> bool {
     // Known text extensions
@@ -328,13 +291,5 @@ mod tests {
 
         let entries: Vec<_> = walker.walk().collect();
         assert!(entries.len() >= 3);
-    }
-
-    #[test]
-    fn test_glob_match() {
-        assert!(glob_match("**/node_modules/**", "foo/node_modules/bar/baz.js"));
-        assert!(glob_match("**/.git/**", ".git/config"));
-        assert!(glob_match("*.log", "debug.log"));
-        assert!(!glob_match("*.log", "debug.txt"));
     }
 }

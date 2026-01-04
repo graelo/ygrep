@@ -14,6 +14,7 @@ pub mod error;
 pub mod fs;
 pub mod index;
 pub mod search;
+pub(crate) mod util;
 pub mod watcher;
 
 pub use config::Config;

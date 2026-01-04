@@ -14,6 +14,7 @@ use tokio::sync::mpsc;
 
 use crate::config::IndexerConfig;
 use crate::error::{Result, YgrepError};
+use crate::util::glob_match;
 
 /// Events emitted by the file watcher
 #[derive(Debug, Clone)]
@@ -326,43 +327,6 @@ fn matches_ignore_pattern(path: &Path, config: &IndexerConfig) -> bool {
     }
 
     false
-}
-
-/// Simple glob matching (copied from walker.rs for consistency)
-fn glob_match(pattern: &str, path: &str) -> bool {
-    // Handle **/dir/** patterns (match dir anywhere in path)
-    if let Some(rest) = pattern.strip_prefix("**/") {
-        if let Some(dir_name) = rest.strip_suffix("/**") {
-            return path.contains(&format!("/{}/", dir_name))
-                || path.starts_with(&format!("{}/", dir_name))
-                || path.ends_with(&format!("/{}", dir_name));
-        }
-    }
-
-    // Handle **/*.ext patterns (match extension anywhere)
-    if let Some(ext) = pattern.strip_prefix("**/*.") {
-        return path.ends_with(&format!(".{}", ext));
-    }
-
-    // Handle **/something patterns (match at end)
-    if let Some(suffix) = pattern.strip_prefix("**/") {
-        return path.ends_with(suffix) || path.ends_with(&format!("/{}", suffix));
-    }
-
-    // Handle something/** patterns (match at start)
-    if let Some(prefix) = pattern.strip_suffix("/**") {
-        return path.starts_with(prefix) || path.contains(&format!("/{}", prefix));
-    }
-
-    // Handle simple * patterns (*.ext)
-    if let Some(ext) = pattern.strip_prefix("*.") {
-        return path.ends_with(&format!(".{}", ext));
-    }
-
-    // Exact match or path component match
-    path == pattern
-        || path.ends_with(&format!("/{}", pattern))
-        || path.contains(&format!("/{}/", pattern))
 }
 
 #[cfg(test)]
