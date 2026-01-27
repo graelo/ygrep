@@ -4,11 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use notify_debouncer_full::{
-    new_debouncer,
-    notify::RecursiveMode,
-    DebounceEventResult,
-};
+use notify_debouncer_full::{new_debouncer, notify::RecursiveMode, DebounceEventResult};
 use parking_lot::Mutex;
 use tokio::sync::mpsc;
 
@@ -274,9 +270,7 @@ fn find_symlink_targets(root: &Path) -> Vec<PathBuf> {
                 let absolute_target = if target.is_absolute() {
                     target
                 } else {
-                    path.parent()
-                        .map(|p| p.join(&target))
-                        .unwrap_or(target)
+                    path.parent().map(|p| p.join(&target)).unwrap_or(target)
                 };
 
                 // Canonicalize to resolve any .. or . components

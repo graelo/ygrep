@@ -114,17 +114,24 @@ impl SearchResult {
         let mut output = String::new();
 
         // Header with count and search type breakdown
-        output.push_str(&format!("# {} results ({})\n\n", self.hits.len(), self.search_type_summary()));
+        output.push_str(&format!(
+            "# {} results ({})\n\n",
+            self.hits.len(),
+            self.search_type_summary()
+        ));
 
         for hit in &self.hits {
             // Single line format: path:line (score%) [match_type]
             let score_pct = Self::display_score(hit.score);
             let match_indicator = match hit.match_type {
-                MatchType::Hybrid => " +",  // both text and semantic
+                MatchType::Hybrid => " +",   // both text and semantic
                 MatchType::Semantic => " ~", // semantic only
                 MatchType::Text => "",       // text only (default, no indicator)
             };
-            output.push_str(&format!("{}:{} ({:.0}%){}\n", hit.path, hit.line_start, score_pct, match_indicator));
+            output.push_str(&format!(
+                "{}:{} ({:.0}%){}\n",
+                hit.path, hit.line_start, score_pct, match_indicator
+            ));
 
             // Show only the first matching line, trimmed
             if let Some(first_line) = hit.snippet.lines().next() {
@@ -211,18 +218,16 @@ mod tests {
     #[test]
     fn test_format_ai() {
         let result = SearchResult {
-            hits: vec![
-                SearchHit {
-                    path: "src/main.rs".to_string(),
-                    line_start: 1,
-                    line_end: 10,
-                    snippet: "fn main() {\n    println!(\"hello\");\n}".to_string(),
-                    score: 0.9,
-                    is_chunk: false,
-                    doc_id: "abc".to_string(),
-                    match_type: MatchType::Text,
-                },
-            ],
+            hits: vec![SearchHit {
+                path: "src/main.rs".to_string(),
+                line_start: 1,
+                line_end: 10,
+                snippet: "fn main() {\n    println!(\"hello\");\n}".to_string(),
+                score: 0.9,
+                is_chunk: false,
+                doc_id: "abc".to_string(),
+                match_type: MatchType::Text,
+            }],
             total: 1,
             query_time_ms: 15,
             text_hits: 1,

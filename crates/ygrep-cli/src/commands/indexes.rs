@@ -1,4 +1,4 @@
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
 
@@ -30,9 +30,13 @@ fn read_index_info(hash: &str, index_path: &PathBuf) -> Result<IndexInfo> {
             .ok()
             .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
 
-        let workspace = json.as_ref()
-            .and_then(|v| v.get("workspace").and_then(|w| w.as_str()).map(String::from));
-        let semantic = json.as_ref()
+        let workspace = json.as_ref().and_then(|v| {
+            v.get("workspace")
+                .and_then(|w| w.as_str())
+                .map(String::from)
+        });
+        let semantic = json
+            .as_ref()
             .and_then(|v| v.get("semantic").and_then(|s| s.as_bool()));
 
         (workspace, semantic)
@@ -120,7 +124,11 @@ pub fn list() -> Result<()> {
         return Ok(());
     }
 
-    println!("# {} indexes ({})\n", indexes.len(), format_size(total_size));
+    println!(
+        "# {} indexes ({})\n",
+        indexes.len(),
+        format_size(total_size)
+    );
 
     for info in &indexes {
         let workspace = info.workspace.as_deref().unwrap_or("(unknown)");
@@ -129,7 +137,12 @@ pub fn list() -> Result<()> {
             Some(false) => "text",
             None => "text", // Default for older indexes without the flag
         };
-        println!("{}  {}  [{}]", info.hash, format_size(info.size_bytes), index_type);
+        println!(
+            "{}  {}  [{}]",
+            info.hash,
+            format_size(info.size_bytes),
+            index_type
+        );
         println!("  {}\n", workspace);
     }
 
@@ -163,7 +176,11 @@ pub fn clean() -> Result<()> {
                     if should_remove {
                         let size = info.size_bytes;
                         fs::remove_dir_all(&path)?;
-                        println!("Removed: {} ({})", info.workspace.as_deref().unwrap_or(&info.hash), format_size(size));
+                        println!(
+                            "Removed: {} ({})",
+                            info.workspace.as_deref().unwrap_or(&info.hash),
+                            format_size(size)
+                        );
                         removed += 1;
                         freed += size;
                     }
@@ -175,7 +192,11 @@ pub fn clean() -> Result<()> {
     if removed == 0 {
         println!("No orphaned indexes found.");
     } else {
-        println!("\nRemoved {} indexes, freed {}", removed, format_size(freed));
+        println!(
+            "\nRemoved {} indexes, freed {}",
+            removed,
+            format_size(freed)
+        );
     }
 
     Ok(())
@@ -195,7 +216,11 @@ pub fn remove(identifier: &str) -> Result<()> {
     if index_path.exists() && index_path.is_dir() {
         let info = read_index_info(identifier, &index_path)?;
         fs::remove_dir_all(&index_path)?;
-        println!("Removed index: {} ({})", identifier, format_size(info.size_bytes));
+        println!(
+            "Removed index: {} ({})",
+            identifier,
+            format_size(info.size_bytes)
+        );
         return Ok(());
     }
 
@@ -216,7 +241,11 @@ pub fn remove(identifier: &str) -> Result<()> {
 
                     if matches {
                         fs::remove_dir_all(&path)?;
-                        println!("Removed index for: {} ({})", info.workspace.as_deref().unwrap_or(&info.hash), format_size(info.size_bytes));
+                        println!(
+                            "Removed index for: {} ({})",
+                            info.workspace.as_deref().unwrap_or(&info.hash),
+                            format_size(info.size_bytes)
+                        );
                         return Ok(());
                     }
                 }

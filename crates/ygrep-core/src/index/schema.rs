@@ -1,5 +1,10 @@
-use tantivy::schema::{Schema, STORED, STRING, FAST, TextFieldIndexing, TextOptions, IndexRecordOption};
-use tantivy::tokenizer::{TokenizerManager, TextAnalyzer, LowerCaser, RemoveLongFilter};
+use tantivy::schema::{
+    IndexRecordOption, Schema, TextFieldIndexing, TextOptions, FAST, STORED, STRING,
+};
+use tantivy::tokenizer::{LowerCaser, RemoveLongFilter, TextAnalyzer, TokenizerManager};
+
+/// Schema version - increment when schema changes require reindexing
+pub const SCHEMA_VERSION: u32 = 2;
 
 /// Name of our custom code tokenizer
 pub const CODE_TOKENIZER: &str = "code";
@@ -124,9 +129,19 @@ pub fn build_document_schema() -> Schema {
         )
         .set_stored();
 
-    // Document identification
-    schema_builder.add_text_field(fields::DOC_ID, STRING | STORED);
-    schema_builder.add_text_field(fields::PATH, STRING | STORED);
+    // STRING + STORED + FAST for fields used in incremental indexing lookups
+    let string_stored_fast = TextOptions::default()
+        .set_indexing_options(
+            TextFieldIndexing::default()
+                .set_tokenizer("raw")
+                .set_index_option(IndexRecordOption::Basic),
+        )
+        .set_stored()
+        .set_fast(None);
+
+    // Document identification (fast for incremental index map building)
+    schema_builder.add_text_field(fields::DOC_ID, string_stored_fast.clone());
+    schema_builder.add_text_field(fields::PATH, string_stored_fast.clone());
     schema_builder.add_text_field(fields::WORKSPACE, STRING | STORED);
 
     // File metadata
@@ -141,8 +156,8 @@ pub fn build_document_schema() -> Schema {
     schema_builder.add_u64_field(fields::LINE_START, FAST | STORED);
     schema_builder.add_u64_field(fields::LINE_END, FAST | STORED);
 
-    // Chunk-specific fields
-    schema_builder.add_text_field(fields::CHUNK_ID, STRING | STORED);
+    // Chunk-specific fields (CHUNK_ID is fast for incremental index filtering)
+    schema_builder.add_text_field(fields::CHUNK_ID, string_stored_fast);
     schema_builder.add_text_field(fields::PARENT_DOC, STRING | STORED);
 
     schema_builder.build()

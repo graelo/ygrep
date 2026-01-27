@@ -1,8 +1,8 @@
 //! LRU cache for embeddings to avoid re-computation
 
-use std::num::NonZeroUsize;
 use lru::LruCache;
 use parking_lot::Mutex;
+use std::num::NonZeroUsize;
 use xxhash_rust::xxh3::xxh3_64;
 
 /// LRU cache for computed embeddings
@@ -41,7 +41,8 @@ impl EmbeddingCache {
             self.hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             Some(embedding.clone())
         } else {
-            self.misses.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.misses
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             None
         }
     }

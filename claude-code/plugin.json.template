@@ -1,0 +1,9 @@
+{
+  "name": "ygrep",
+  "description": "Fast indexed code search for Claude Code",
+  "version": "{{VERSION}}",
+  "author": {
+    "name": "YetiDevWorks"
+  },
+  "hooks": "./hooks/hook.json"
+}

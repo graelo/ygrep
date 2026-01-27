@@ -1,9 +1,12 @@
 pub mod schema;
-pub mod writer;
 #[cfg(feature = "embeddings")]
 pub mod vector;
+pub mod writer;
 
-pub use schema::{build_document_schema, SchemaFields, fields, register_tokenizers, CODE_TOKENIZER};
-pub use writer::Indexer;
+pub use schema::{
+    build_document_schema, fields, register_tokenizers, SchemaFields, CODE_TOKENIZER,
+    SCHEMA_VERSION,
+};
 #[cfg(feature = "embeddings")]
 pub use vector::VectorIndex;
+pub use writer::Indexer;

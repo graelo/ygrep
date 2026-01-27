@@ -1,10 +1,10 @@
-use std::path::{Path, PathBuf};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+use super::symlink::{ResolvedPath, SymlinkResolver};
 use crate::config::IndexerConfig;
 use crate::error::Result;
-use super::symlink::{SymlinkResolver, ResolvedPath};
 
 /// Walks a directory tree, respecting gitignore and handling symlinks
 pub struct FileWalker {
@@ -23,7 +23,10 @@ impl FileWalker {
         };
         let symlink_resolver = SymlinkResolver::new(config.follow_symlinks, 20);
 
-        tracing::debug!("FileWalker initialized with {} ignore patterns", config.ignore_patterns.len());
+        tracing::debug!(
+            "FileWalker initialized with {} ignore patterns",
+            config.ignore_patterns.len()
+        );
         for pattern in &config.ignore_patterns {
             tracing::debug!("  ignore pattern: {}", pattern);
         }
@@ -56,9 +59,22 @@ impl FileWalker {
                     // Quick check for common ignored directories
                     let dominated = matches!(
                         dir_name.as_ref(),
-                        "cache" | "node_modules" | "vendor" | "target" | "dist" |
-                        "build" | "logs" | "log" | "tmp" | "temp" | "var" |
-                        "__pycache__" | ".git" | ".svn" | "coverage" | "htmlcov"
+                        "cache"
+                            | "node_modules"
+                            | "vendor"
+                            | "target"
+                            | "dist"
+                            | "build"
+                            | "logs"
+                            | "log"
+                            | "tmp"
+                            | "temp"
+                            | "var"
+                            | "__pycache__"
+                            | ".git"
+                            | ".svn"
+                            | "coverage"
+                            | "htmlcov"
                     );
 
                     if dominated {
@@ -94,13 +110,15 @@ impl FileWalker {
 
                 // Resolve symlinks and check for cycles/duplicates
                 match self.symlink_resolver.resolve(path) {
-                    Ok(ResolvedPath::Resolved { original, canonical, is_symlink }) => {
-                        Some(WalkEntry {
-                            path: original,
-                            canonical,
-                            is_symlink,
-                        })
-                    }
+                    Ok(ResolvedPath::Resolved {
+                        original,
+                        canonical,
+                        is_symlink,
+                    }) => Some(WalkEntry {
+                        path: original,
+                        canonical,
+                        is_symlink,
+                    }),
                     Ok(ResolvedPath::Skipped(reason)) => {
                         tracing::debug!("Skipping {}: {}", path.display(), reason);
                         None
@@ -142,7 +160,12 @@ impl FileWalker {
         if !self.config.include_extensions.is_empty() {
             if let Some(ext) = path.extension() {
                 let ext_str = ext.to_string_lossy().to_lowercase();
-                if !self.config.include_extensions.iter().any(|e| e.to_lowercase() == ext_str) {
+                if !self
+                    .config
+                    .include_extensions
+                    .iter()
+                    .any(|e| e.to_lowercase() == ext_str)
+                {
                     return false;
                 }
             } else {
@@ -211,11 +234,11 @@ fn is_hidden(entry: &walkdir::DirEntry) -> bool {
 fn glob_match(pattern: &str, path: &str) -> bool {
     // Handle **/dir/** patterns (match dir anywhere in path)
     if pattern.starts_with("**/") && pattern.ends_with("/**") {
-        let dir_name = &pattern[3..pattern.len()-3];
+        let dir_name = &pattern[3..pattern.len() - 3];
         // Check if this directory name appears as a complete path component
         return path.contains(&format!("/{}/", dir_name))
             || path.starts_with(&format!("{}/", dir_name))
-            || path.ends_with(&format!("/{}", dir_name));  // At end of path (exact match)
+            || path.ends_with(&format!("/{}", dir_name)); // At end of path (exact match)
     }
 
     // Handle **/*.ext patterns (match extension anywhere)
@@ -232,7 +255,7 @@ fn glob_match(pattern: &str, path: &str) -> bool {
 
     // Handle something/** patterns (match at start)
     if pattern.ends_with("/**") {
-        let prefix = &pattern[..pattern.len()-3];
+        let prefix = &pattern[..pattern.len() - 3];
         return path.starts_with(prefix) || path.contains(&format!("/{}", prefix));
     }
 
@@ -253,27 +276,113 @@ fn is_text_file(path: &Path) -> bool {
     // Known text extensions
     const TEXT_EXTENSIONS: &[&str] = &[
         // Programming languages
-        "rs", "py", "js", "ts", "jsx", "tsx", "mjs", "mts", "cjs", "cts",
-        "go", "rb", "php", "java", "c", "cpp", "cc", "h", "hpp", "hh",
-        "cs", "swift", "kt", "scala", "clj", "ex", "exs", "erl", "hs", "ml", "fs", "r", "jl",
-        "lua", "pl", "pm", "sh", "bash", "zsh", "fish", "ps1", "bat", "cmd",
+        "rs",
+        "py",
+        "js",
+        "ts",
+        "jsx",
+        "tsx",
+        "mjs",
+        "mts",
+        "cjs",
+        "cts",
+        "go",
+        "rb",
+        "php",
+        "java",
+        "c",
+        "cpp",
+        "cc",
+        "h",
+        "hpp",
+        "hh",
+        "cs",
+        "swift",
+        "kt",
+        "scala",
+        "clj",
+        "ex",
+        "exs",
+        "erl",
+        "hs",
+        "ml",
+        "fs",
+        "r",
+        "jl",
+        "lua",
+        "pl",
+        "pm",
+        "sh",
+        "bash",
+        "zsh",
+        "fish",
+        "ps1",
+        "bat",
+        "cmd",
         // Web/markup
-        "html", "htm", "css", "scss", "sass", "less", "xml", "json", "yaml", "yml", "toml",
+        "html",
+        "htm",
+        "css",
+        "scss",
+        "sass",
+        "less",
+        "xml",
+        "json",
+        "yaml",
+        "yml",
+        "toml",
         // Templates
-        "twig", "blade", "ejs", "hbs", "handlebars", "mustache", "pug", "jade", "erb", "haml",
-        "njk", "nunjucks", "jinja", "jinja2", "liquid", "eta",
+        "twig",
+        "blade",
+        "ejs",
+        "hbs",
+        "handlebars",
+        "mustache",
+        "pug",
+        "jade",
+        "erb",
+        "haml",
+        "njk",
+        "nunjucks",
+        "jinja",
+        "jinja2",
+        "liquid",
+        "eta",
         // Documentation
-        "md", "markdown", "rst", "txt", "csv", "sql", "graphql", "gql",
+        "md",
+        "markdown",
+        "rst",
+        "txt",
+        "csv",
+        "sql",
+        "graphql",
+        "gql",
         // Config/build
-        "dockerfile", "makefile", "cmake", "gradle", "pom", "ini", "conf", "cfg",
+        "dockerfile",
+        "makefile",
+        "cmake",
+        "gradle",
+        "pom",
+        "ini",
+        "conf",
+        "cfg",
         // Frontend frameworks
-        "vue", "svelte", "astro",
+        "vue",
+        "svelte",
+        "astro",
         // Infrastructure
-        "tf", "hcl", "nix",
+        "tf",
+        "hcl",
+        "nix",
         // Data formats
-        "proto", "thrift", "avsc",
+        "proto",
+        "thrift",
+        "avsc",
         // Git/editor config
-        "gitignore", "gitattributes", "editorconfig", "env",
+        "gitignore",
+        "gitattributes",
+        "editorconfig",
+        "env",
     ];
 
     // Check extension
@@ -288,9 +397,18 @@ fn is_text_file(path: &Path) -> bool {
     if let Some(name) = path.file_name() {
         let name_lower = name.to_string_lossy().to_lowercase();
         const TEXT_FILENAMES: &[&str] = &[
-            "dockerfile", "makefile", "rakefile", "gemfile", "procfile",
-            "readme", "license", "copying", "authors", "changelog",
-            "todo", "contributing",
+            "dockerfile",
+            "makefile",
+            "rakefile",
+            "gemfile",
+            "procfile",
+            "readme",
+            "license",
+            "copying",
+            "authors",
+            "changelog",
+            "todo",
+            "contributing",
         ];
         if TEXT_FILENAMES.contains(&name_lower.as_str()) {
             return true;
@@ -331,7 +449,10 @@ mod tests {
 
     #[test]
     fn test_glob_match() {
-        assert!(glob_match("**/node_modules/**", "foo/node_modules/bar/baz.js"));
+        assert!(glob_match(
+            "**/node_modules/**",
+            "foo/node_modules/bar/baz.js"
+        ));
         assert!(glob_match("**/.git/**", ".git/config"));
         assert!(glob_match("*.log", "debug.log"));
         assert!(!glob_match("*.log", "debug.txt"));

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::path::Path;
-use ygrep_core::{Workspace, WatchEvent};
+use ygrep_core::{WatchEvent, Workspace};
 
 pub fn run(workspace_path: &Path) -> Result<()> {
     eprintln!("Opening workspace {}...", workspace_path.display());
@@ -25,15 +25,14 @@ pub fn run(workspace_path: &Path) -> Result<()> {
     eprintln!("Starting file watcher (mode: {})...", mode);
     eprintln!("Press Ctrl+C to stop.\n");
 
-    let mut watcher = workspace.create_watcher()
+    let mut watcher = workspace
+        .create_watcher()
         .context("Failed to create file watcher")?;
 
-    watcher.start()
-        .context("Failed to start file watcher")?;
+    watcher.start().context("Failed to start file watcher")?;
 
     // Create tokio runtime for async event handling
-    let rt = tokio::runtime::Runtime::new()
-        .context("Failed to create async runtime")?;
+    let rt = tokio::runtime::Runtime::new().context("Failed to create async runtime")?;
 
     rt.block_on(async {
         let mut changed_count = 0u64;
@@ -87,13 +86,17 @@ pub fn run(workspace_path: &Path) -> Result<()> {
 
             // Print periodic stats
             if (changed_count + deleted_count) % 100 == 0 && (changed_count + deleted_count) > 0 {
-                eprintln!("\n--- Stats: {} indexed, {} deleted, {} errors ---\n",
-                    changed_count, deleted_count, error_count);
+                eprintln!(
+                    "\n--- Stats: {} indexed, {} deleted, {} errors ---\n",
+                    changed_count, deleted_count, error_count
+                );
             }
         }
 
-        eprintln!("\nWatch stopped. {} indexed, {} deleted, {} errors.",
-            changed_count, deleted_count, error_count);
+        eprintln!(
+            "\nWatch stopped. {} indexed, {} deleted, {} errors.",
+            changed_count, deleted_count, error_count
+        );
     });
 
     Ok(())
@@ -102,19 +105,105 @@ pub fn run(workspace_path: &Path) -> Result<()> {
 /// Check if a file should be indexed (simple extension check)
 fn is_indexable(path: &Path) -> bool {
     const TEXT_EXTENSIONS: &[&str] = &[
-        "rs", "py", "js", "ts", "jsx", "tsx", "mjs", "mts", "cjs", "cts",
-        "go", "rb", "php", "java", "c", "cpp", "cc", "h", "hpp", "hh",
-        "cs", "swift", "kt", "scala", "clj", "ex", "exs", "erl", "hs", "ml", "fs", "r", "jl",
-        "lua", "pl", "pm", "sh", "bash", "zsh", "fish", "ps1", "bat", "cmd",
-        "html", "htm", "css", "scss", "sass", "less", "xml", "json", "yaml", "yml", "toml",
-        "twig", "blade", "ejs", "hbs", "handlebars", "mustache", "pug", "jade", "erb", "haml",
-        "njk", "nunjucks", "jinja", "jinja2", "liquid", "eta",
-        "md", "markdown", "rst", "txt", "csv", "sql", "graphql", "gql",
-        "dockerfile", "makefile", "cmake", "gradle", "pom", "ini", "conf", "cfg",
-        "vue", "svelte", "astro",
-        "tf", "hcl", "nix",
-        "proto", "thrift", "avsc",
-        "gitignore", "gitattributes", "editorconfig", "env",
+        "rs",
+        "py",
+        "js",
+        "ts",
+        "jsx",
+        "tsx",
+        "mjs",
+        "mts",
+        "cjs",
+        "cts",
+        "go",
+        "rb",
+        "php",
+        "java",
+        "c",
+        "cpp",
+        "cc",
+        "h",
+        "hpp",
+        "hh",
+        "cs",
+        "swift",
+        "kt",
+        "scala",
+        "clj",
+        "ex",
+        "exs",
+        "erl",
+        "hs",
+        "ml",
+        "fs",
+        "r",
+        "jl",
+        "lua",
+        "pl",
+        "pm",
+        "sh",
+        "bash",
+        "zsh",
+        "fish",
+        "ps1",
+        "bat",
+        "cmd",
+        "html",
+        "htm",
+        "css",
+        "scss",
+        "sass",
+        "less",
+        "xml",
+        "json",
+        "yaml",
+        "yml",
+        "toml",
+        "twig",
+        "blade",
+        "ejs",
+        "hbs",
+        "handlebars",
+        "mustache",
+        "pug",
+        "jade",
+        "erb",
+        "haml",
+        "njk",
+        "nunjucks",
+        "jinja",
+        "jinja2",
+        "liquid",
+        "eta",
+        "md",
+        "markdown",
+        "rst",
+        "txt",
+        "csv",
+        "sql",
+        "graphql",
+        "gql",
+        "dockerfile",
+        "makefile",
+        "cmake",
+        "gradle",
+        "pom",
+        "ini",
+        "conf",
+        "cfg",
+        "vue",
+        "svelte",
+        "astro",
+        "tf",
+        "hcl",
+        "nix",
+        "proto",
+        "thrift",
+        "avsc",
+        "gitignore",
+        "gitattributes",
+        "editorconfig",
+        "env",
     ];
 
     if let Some(ext) = path.extension() {

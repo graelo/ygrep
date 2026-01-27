@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ygrep-local",
+  "owner": {
+    "name": "YetiDevWorks"
+  },
+  "plugins": [
+    {
+      "name": "ygrep",
+      "source": "./plugins/ygrep",
+      "description": "Fast indexed code search for Claude Code",
+      "version": "{{VERSION}}",
+      "author": {
+        "name": "YetiDevWorks"
+      },
+      "skills": ["./skills/ygrep"]
+    }
+  ]
+}

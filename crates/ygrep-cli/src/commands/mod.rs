@@ -1,6 +1,6 @@
-pub mod search;
 pub mod index;
+pub mod indexes;
+pub mod install;
+pub mod search;
 pub mod status;
 pub mod watch;
-pub mod install;
-pub mod indexes;

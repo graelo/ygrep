@@ -4,14 +4,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-use tantivy::{Index, collector::TopDocs, query::QueryParser};
+use tantivy::{collector::TopDocs, query::QueryParser, Index};
 
+use super::results::{MatchType, SearchHit, SearchResult};
 use crate::config::SearchConfig;
-use crate::embeddings::{EmbeddingModel, EmbeddingCache};
+use crate::embeddings::{EmbeddingCache, EmbeddingModel};
 use crate::error::Result;
 use crate::index::schema::SchemaFields;
 use crate::index::VectorIndex;
-use super::results::{SearchResult, SearchHit, MatchType};
 
 /// Hybrid searcher combining BM25 text search and vector similarity search
 pub struct HybridSearcher {
@@ -48,7 +48,9 @@ impl HybridSearcher {
     /// Perform hybrid search combining BM25 and vector search
     pub fn search(&self, query: &str, limit: Option<usize>) -> Result<SearchResult> {
         let start = Instant::now();
-        let limit = limit.unwrap_or(self.config.default_limit).min(self.config.max_limit);
+        let limit = limit
+            .unwrap_or(self.config.default_limit)
+            .min(self.config.max_limit);
 
         // Fetch more results from each method for better fusion
         let fetch_limit = limit * 3;
@@ -70,14 +72,17 @@ impl HybridSearcher {
 
         // Take top results
         // Note: RRF scores are typically small (max ~0.016 with K=60), so we don't apply min_score filter
-        let hits: Vec<SearchHit> = fused
-            .into_iter()
-            .take(limit)
-            .collect();
+        let hits: Vec<SearchHit> = fused.into_iter().take(limit).collect();
 
         // Count text vs semantic hits
-        let text_hits = hits.iter().filter(|h| matches!(h.match_type, MatchType::Text | MatchType::Hybrid)).count();
-        let semantic_hits = hits.iter().filter(|h| matches!(h.match_type, MatchType::Semantic | MatchType::Hybrid)).count();
+        let text_hits = hits
+            .iter()
+            .filter(|h| matches!(h.match_type, MatchType::Text | MatchType::Hybrid))
+            .count();
+        let semantic_hits = hits
+            .iter()
+            .filter(|h| matches!(h.match_type, MatchType::Semantic | MatchType::Hybrid))
+            .count();
 
         let query_time_ms = start.elapsed().as_millis() as u64;
 
@@ -137,7 +142,9 @@ impl HybridSearcher {
 
         // Get or compute query embedding
         let query_embedding = self.embedding_cache.get_or_insert(query, || {
-            self.embedding_model.embed(query).unwrap_or_else(|_| vec![0.0; 384])
+            self.embedding_model
+                .embed(query)
+                .unwrap_or_else(|_| vec![0.0; 384])
         });
 
         // Search vector index
@@ -168,7 +175,11 @@ impl HybridSearcher {
     }
 
     /// Look up document by doc_id
-    fn lookup_by_doc_id(&self, searcher: &tantivy::Searcher, doc_id: &str) -> Result<Option<DocInfo>> {
+    fn lookup_by_doc_id(
+        &self,
+        searcher: &tantivy::Searcher,
+        doc_id: &str,
+    ) -> Result<Option<DocInfo>> {
         use tantivy::query::TermQuery;
         use tantivy::schema::IndexRecordOption;
         use tantivy::Term;
@@ -185,7 +196,9 @@ impl HybridSearcher {
                 path: extract_text(&doc, self.fields.path).unwrap_or_default(),
                 content: extract_text(&doc, self.fields.content).unwrap_or_default(),
                 line_start: extract_u64(&doc, self.fields.line_start).unwrap_or(1),
-                is_chunk: !extract_text(&doc, self.fields.chunk_id).unwrap_or_default().is_empty(),
+                is_chunk: !extract_text(&doc, self.fields.chunk_id)
+                    .unwrap_or_default()
+                    .is_empty(),
             }))
         } else {
             Ok(None)
@@ -208,26 +221,26 @@ impl HybridSearcher {
         // Add BM25 results
         for result in &bm25_results {
             let rrf_score = bm25_weight / (K + result.rank as f32);
-            let entry = combined_scores.entry(result.doc_id.clone()).or_insert_with(|| {
-                FusedScore {
+            let entry = combined_scores
+                .entry(result.doc_id.clone())
+                .or_insert_with(|| FusedScore {
                     result: result.clone(),
                     bm25_rrf: 0.0,
                     vector_rrf: 0.0,
-                }
-            });
+                });
             entry.bm25_rrf = rrf_score;
         }
 
         // Add vector results
         for result in &vector_results {
             let rrf_score = vector_weight / (K + result.rank as f32);
-            let entry = combined_scores.entry(result.doc_id.clone()).or_insert_with(|| {
-                FusedScore {
+            let entry = combined_scores
+                .entry(result.doc_id.clone())
+                .or_insert_with(|| FusedScore {
                     result: result.clone(),
                     bm25_rrf: 0.0,
                     vector_rrf: 0.0,
-                }
-            });
+                });
             entry.vector_rrf = rrf_score;
         }
 
@@ -236,7 +249,8 @@ impl HybridSearcher {
             .into_values()
             .map(|fused| {
                 let total_score = fused.bm25_rrf + fused.vector_rrf;
-                let (snippet, match_offset, line_count) = create_relevant_snippet(&fused.result.content, query, 10);
+                let (snippet, match_offset, line_count) =
+                    create_relevant_snippet(&fused.result.content, query, 10);
 
                 // Adjust line numbers to reflect the snippet position
                 let actual_line_start = fused.result.line_start + match_offset as u64;
@@ -264,7 +278,11 @@ impl HybridSearcher {
             .collect();
 
         // Sort by score descending
-        hits.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        hits.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         hits
     }
@@ -338,7 +356,12 @@ fn create_relevant_snippet(content: &str, query: &str, max_lines: usize) -> (Str
 
     if matching_indices.is_empty() {
         // No direct matches, return first lines
-        let snippet = lines.iter().take(max_lines).copied().collect::<Vec<_>>().join("\n");
+        let snippet = lines
+            .iter()
+            .take(max_lines)
+            .copied()
+            .collect::<Vec<_>>()
+            .join("\n");
         let line_count = snippet.lines().count();
         return (snippet, 0, line_count);
     }

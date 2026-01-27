@@ -8,6 +8,8 @@ A fast, local, indexed code search tool optimized for AI coding assistants. Writ
 - **Regex support** - Use `-r` flag for regex patterns (`fn\s+main`, `TODO|FIXME`)
 - **Code-aware tokenizer** - Preserves `$`, `@`, `#` as part of tokens (essential for PHP, Shell, Python, etc.)
 - **Fast indexed search** - Tantivy-powered BM25 ranking, instant results
+- **Incremental indexing** - Only re-indexes changed files based on mtime; no-op runs complete in ~10ms
+- **Non-blocking AI hooks** - Background indexing on session start, never slows down your AI tool
 - **File watching** - Incremental index updates on file changes
 - **Optional semantic search** - HNSW vector index with local semantic model (all-MiniLM-L6-v2)
 - **Symlink handling** - Follows symlinks with cycle detection
@@ -89,14 +91,18 @@ ygrep search "query" --pretty      # Human-readable
 ### Indexing
 
 ```bash
-ygrep index                        # Index current directory (honors stored mode)
-ygrep index --rebuild              # Force rebuild (required after ygrep updates)
+ygrep index                        # Incremental update (only changed files)
+ygrep index --rebuild              # Force full rebuild from scratch
 ygrep index --semantic             # Build semantic index (sticky - remembered)
 ygrep index --text                 # Build text-only index (sticky - remembered)
 ygrep index /path/to/project       # Index specific directory
 ```
 
+Indexing is **incremental by default** - only files with changed modification times are re-indexed. A no-op run (nothing changed) completes in ~10ms. Use `--rebuild` to force a full re-index.
+
 The `--semantic` and `--text` flags are **sticky** - once set, subsequent `ygrep index` commands (without flags) will remember and use the same mode. This also applies to `ygrep watch`.
+
+When upgrading ygrep to a new version with schema changes, the index is automatically rebuilt on the next `ygrep index` run.
 
 ### File Watching
 
@@ -177,9 +183,10 @@ ygrep uninstall claude-code        # Uninstall plugin
 ```
 
 After installation, restart Claude Code. The plugin:
-- Runs `ygrep index` on session start
-- Provides a skill that teaches Claude to use ygrep for searches
-- Invoke with `/ygrep` then ask Claude to search
+- Runs `ygrep index` in the background on session start (non-blocking)
+- Provides a skill that teaches Claude to prefer ygrep over built-in search
+
+**Important:** At the start of each session, run `/ygrep` to load the skill. This tells Claude to use ygrep for code searches instead of its built-in Grep/Glob tools. Without loading the skill, Claude will default to its slower built-in search.
 
 ### OpenCode
 
@@ -263,9 +270,10 @@ src/main.rs:12-28
 ## How It Works
 
 1. **Indexing**: Walks directory tree, indexes text files with Tantivy using a code-aware tokenizer
-2. **Tokenizer**: Custom tokenizer preserves code characters (`$`, `@`, `#`, `-`, `_`) as part of tokens
-3. **Search**: BM25-ranked literal search (default) or regex matching with `-r` flag, plus optional semantic search
-4. **Results**: Returns matching files with line numbers and context
+2. **Incremental updates**: Compares file modification times against the index using fast columnar fields; only changed, new, or deleted files are processed
+3. **Tokenizer**: Custom tokenizer preserves code characters (`$`, `@`, `#`, `-`, `_`) as part of tokens
+4. **Search**: BM25-ranked literal search (default) or regex matching with `-r` flag, plus optional semantic search
+5. **Results**: Returns matching files with line numbers and context
 
 ## Configuration
 
@@ -279,8 +287,8 @@ Index data stored in:
 # Via Homebrew
 brew upgrade ygrep
 
-# Then rebuild indexes to use latest tokenizer
-ygrep index --rebuild
+# Indexes auto-rebuild when schema changes are detected
+ygrep index
 ```
 
 ## License

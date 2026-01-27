@@ -1,11 +1,11 @@
-use std::time::Instant;
-use tantivy::{Index, collector::TopDocs, query::QueryParser};
 use regex::RegexBuilder;
+use std::time::Instant;
+use tantivy::{collector::TopDocs, query::QueryParser, Index};
 
+use super::results::{MatchType, SearchHit, SearchResult};
 use crate::config::SearchConfig;
 use crate::error::Result;
 use crate::index::schema::SchemaFields;
-use super::results::{SearchResult, SearchHit, MatchType};
 
 /// Search engine for querying the index
 pub struct Searcher {
@@ -30,7 +30,9 @@ impl Searcher {
     /// Search the index with a query string (literal text matching like grep)
     pub fn search(&self, query: &str, limit: Option<usize>) -> Result<SearchResult> {
         let start = Instant::now();
-        let limit = limit.unwrap_or(self.config.default_limit).min(self.config.max_limit);
+        let limit = limit
+            .unwrap_or(self.config.default_limit)
+            .min(self.config.max_limit);
 
         // Get a reader
         let reader = self.index.reader()?;
@@ -93,10 +95,15 @@ impl Searcher {
             }
 
             // Normalize score to 0-1 range
-            let normalized_score = if max_score > 0.0 { score / max_score } else { 0.0 };
+            let normalized_score = if max_score > 0.0 {
+                score / max_score
+            } else {
+                0.0
+            };
 
             // Create snippet showing lines that match the query
-            let (snippet, match_line_offset, snippet_line_count) = create_relevant_snippet(&content, query, 10);
+            let (snippet, match_line_offset, snippet_line_count) =
+                create_relevant_snippet(&content, query, 10);
 
             // Adjust line numbers to reflect where the match actually is
             let actual_line_start = line_start + match_line_offset as u64;
@@ -145,7 +152,9 @@ impl Searcher {
         if let Some(ref extensions) = filters.extensions {
             result.hits.retain(|hit| {
                 if let Some(ext) = std::path::Path::new(&hit.path).extension() {
-                    extensions.iter().any(|e| e.eq_ignore_ascii_case(&ext.to_string_lossy()))
+                    extensions
+                        .iter()
+                        .any(|e| e.eq_ignore_ascii_case(&ext.to_string_lossy()))
                 } else {
                     false
                 }
@@ -154,12 +163,16 @@ impl Searcher {
 
         if let Some(ref paths) = filters.paths {
             result.hits.retain(|hit| {
-                paths.iter().any(|p| hit.path.starts_with(p) || hit.path.contains(p))
+                paths
+                    .iter()
+                    .any(|p| hit.path.starts_with(p) || hit.path.contains(p))
             });
         }
 
         // Re-limit
-        let limit = limit.unwrap_or(self.config.default_limit).min(self.config.max_limit);
+        let limit = limit
+            .unwrap_or(self.config.default_limit)
+            .min(self.config.max_limit);
         result.hits.truncate(limit);
         result.total = result.hits.len();
 
@@ -169,17 +182,18 @@ impl Searcher {
     /// Search the index with a regex pattern
     pub fn search_regex(&self, pattern: &str, limit: Option<usize>) -> Result<SearchResult> {
         let start = Instant::now();
-        let limit = limit.unwrap_or(self.config.default_limit).min(self.config.max_limit);
+        let limit = limit
+            .unwrap_or(self.config.default_limit)
+            .min(self.config.max_limit);
 
         // Compile regex (case-insensitive by default, like grep -i)
-        let regex = match RegexBuilder::new(pattern)
-            .case_insensitive(true)
-            .build() {
+        let regex = match RegexBuilder::new(pattern).case_insensitive(true).build() {
             Ok(r) => r,
             Err(e) => {
-                return Err(crate::error::YgrepError::Search(
-                    format!("Invalid regex pattern: {}", e)
-                ));
+                return Err(crate::error::YgrepError::Search(format!(
+                    "Invalid regex pattern: {}",
+                    e
+                )));
             }
         };
 
@@ -194,7 +208,7 @@ impl Searcher {
         // This is a rough heuristic - we extract literal parts from the regex
         let search_terms: Vec<&str> = pattern
             .split(|c: char| !c.is_alphanumeric() && c != '_')
-            .filter(|s| !s.is_empty() && s.len() > 1)  // Skip single chars (likely regex syntax)
+            .filter(|s| !s.is_empty() && s.len() > 1) // Skip single chars (likely regex syntax)
             .collect();
 
         // If we have searchable terms, use Tantivy to narrow down candidates
@@ -238,10 +252,15 @@ impl Searcher {
             }
 
             // Normalize score to 0-1 range
-            let normalized_score = if max_score > 0.0 { score / max_score } else { 0.0 };
+            let normalized_score = if max_score > 0.0 {
+                score / max_score
+            } else {
+                0.0
+            };
 
             // Create snippet showing lines that match the regex
-            let (snippet, match_line_offset, snippet_line_count) = create_regex_snippet(&content, &regex, 10);
+            let (snippet, match_line_offset, snippet_line_count) =
+                create_regex_snippet(&content, &regex, 10);
 
             // Adjust line numbers to reflect where the match actually is
             let actual_line_start = line_start + match_line_offset as u64;
@@ -321,7 +340,12 @@ fn create_relevant_snippet(content: &str, query: &str, max_lines: usize) -> (Str
 
     if matching_indices.is_empty() {
         // No direct matches, return first lines
-        let snippet = lines.iter().take(max_lines).copied().collect::<Vec<_>>().join("\n");
+        let snippet = lines
+            .iter()
+            .take(max_lines)
+            .copied()
+            .collect::<Vec<_>>()
+            .join("\n");
         let line_count = snippet.lines().count();
         return (snippet, 0, line_count);
     }
@@ -341,7 +365,11 @@ fn create_relevant_snippet(content: &str, query: &str, max_lines: usize) -> (Str
 
 /// Create a snippet showing lines relevant to a regex match
 /// Returns (snippet, line_offset_from_start, line_count)
-fn create_regex_snippet(content: &str, regex: &regex::Regex, max_lines: usize) -> (String, usize, usize) {
+fn create_regex_snippet(
+    content: &str,
+    regex: &regex::Regex,
+    max_lines: usize,
+) -> (String, usize, usize) {
     let lines: Vec<&str> = content.lines().collect();
 
     // Find lines that match the regex
@@ -354,7 +382,12 @@ fn create_regex_snippet(content: &str, regex: &regex::Regex, max_lines: usize) -
 
     if matching_indices.is_empty() {
         // No direct line matches, but document matched - return first lines
-        let snippet = lines.iter().take(max_lines).copied().collect::<Vec<_>>().join("\n");
+        let snippet = lines
+            .iter()
+            .take(max_lines)
+            .copied()
+            .collect::<Vec<_>>()
+            .join("\n");
         let line_count = snippet.lines().count();
         return (snippet, 0, line_count);
     }

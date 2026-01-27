@@ -1,16 +1,16 @@
+use parking_lot::RwLock;
 use std::path::Path;
 use std::sync::Arc;
-use parking_lot::RwLock;
 use tantivy::{Index, IndexWriter, TantivyDocument, Term};
 use xxhash_rust::xxh3::xxh3_64;
 
-use crate::config::IndexerConfig;
-#[cfg(feature = "embeddings")]
-use crate::embeddings::{EmbeddingModel, EmbeddingCache};
-use crate::error::{Result, YgrepError};
 use super::schema::SchemaFields;
 #[cfg(feature = "embeddings")]
 use super::VectorIndex;
+use crate::config::IndexerConfig;
+#[cfg(feature = "embeddings")]
+use crate::embeddings::{EmbeddingCache, EmbeddingModel};
+use crate::error::{Result, YgrepError};
 
 /// Handles indexing of files and content
 pub struct Indexer {
@@ -32,11 +32,7 @@ pub struct Indexer {
 
 impl Indexer {
     /// Create a new indexer for a workspace (text search only)
-    pub fn new(
-        config: IndexerConfig,
-        index: Index,
-        workspace_root: &Path,
-    ) -> Result<Self> {
+    pub fn new(config: IndexerConfig, index: Index, workspace_root: &Path) -> Result<Self> {
         let writer = index.writer(50_000_000)?; // 50MB heap
         let schema = index.schema();
         let fields = SchemaFields::new(&schema);
@@ -157,9 +153,11 @@ impl Indexer {
 
         // Generate embeddings if semantic search is enabled
         #[cfg(feature = "embeddings")]
-        if let (Some(vector_index), Some(model), Some(cache)) =
-            (&self.vector_index, &self.embedding_model, &self.embedding_cache)
-        {
+        if let (Some(vector_index), Some(model), Some(cache)) = (
+            &self.vector_index,
+            &self.embedding_model,
+            &self.embedding_cache,
+        ) {
             // Embed the full document
             let embedding = cache.get_or_insert(&content, || {
                 model.embed(&content).unwrap_or_else(|_| vec![0.0; 384])
@@ -169,7 +167,9 @@ impl Indexer {
             // Embed chunks
             for (chunk_id, chunk_content) in chunk_ids {
                 let chunk_embedding = cache.get_or_insert(&chunk_content, || {
-                    model.embed(&chunk_content).unwrap_or_else(|_| vec![0.0; 384])
+                    model
+                        .embed(&chunk_content)
+                        .unwrap_or_else(|_| vec![0.0; 384])
                 });
                 vector_index.insert(&chunk_id, &chunk_embedding)?;
             }

@@ -2,9 +2,9 @@
 //!
 //! Provides lazy-loaded embedding generation using local models.
 
-use std::sync::Arc;
+use fastembed::{EmbeddingModel as FastEmbedModel, InitOptions, TextEmbedding};
 use parking_lot::RwLock;
-use fastembed::{TextEmbedding, InitOptions, EmbeddingModel as FastEmbedModel};
+use std::sync::Arc;
 
 use crate::error::{Result, YgrepError};
 
@@ -92,9 +92,9 @@ impl EmbeddingModel {
         eprint!("  Loading semantic model...");
 
         let model = TextEmbedding::try_new(
-            InitOptions::new(self.model_type.to_fastembed())
-                .with_show_download_progress(true)
-        ).map_err(|e| YgrepError::Config(format!("Failed to load semantic model: {}", e)))?;
+            InitOptions::new(self.model_type.to_fastembed()).with_show_download_progress(true),
+        )
+        .map_err(|e| YgrepError::Config(format!("Failed to load semantic model: {}", e)))?;
 
         let model = Arc::new(model);
         *guard = Some(Arc::clone(&model));
@@ -107,10 +107,13 @@ impl EmbeddingModel {
     /// Generate embedding for a single text
     pub fn embed(&self, text: &str) -> Result<Vec<f32>> {
         let model = self.ensure_loaded()?;
-        let embeddings = model.embed(vec![text], None)
+        let embeddings = model
+            .embed(vec![text], None)
             .map_err(|e| YgrepError::Config(format!("Embedding failed: {}", e)))?;
 
-        embeddings.into_iter().next()
+        embeddings
+            .into_iter()
+            .next()
             .ok_or_else(|| YgrepError::Config("No embedding returned".to_string()))
     }
 
@@ -120,7 +123,8 @@ impl EmbeddingModel {
             return Ok(vec![]);
         }
         let model = self.ensure_loaded()?;
-        model.embed(texts.to_vec(), None)
+        model
+            .embed(texts.to_vec(), None)
             .map_err(|e| YgrepError::Config(format!("Batch embedding failed: {}", e)))
     }
 

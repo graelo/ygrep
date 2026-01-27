@@ -5,6 +5,23 @@ All notable changes to ygrep will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-01-27
+
+### Added
+- **Incremental indexing** - Only re-indexes files that changed since last index, based on mtime comparison
+- **Schema versioning** - Tracks index schema version in workspace metadata; automatically rebuilds when schema changes
+- **Fast field schema** - `path`, `doc_id`, and `chunk_id` fields now use Tantivy columnar fast fields for efficient reads
+- **Stale embedding cleanup** - Soft-deletes vector embeddings for removed files during incremental indexing
+
+### Changed
+- `ygrep index` now runs incrementally by default when an existing index is present (use `--rebuild` for full re-index)
+- Non-blocking hook - Claude Code / Factory Droid startup hook runs `ygrep index` in the background (`&`) instead of blocking
+- `build_indexed_files_map()` reads from fast fields instead of deserializing stored documents, significantly faster for large repos
+- Incremental no-op runs complete in ~0.01-0.02s (previously required full re-index)
+
+### Breaking
+- Index schema changed (v1 to v2) - existing indexes are automatically rebuilt on first run
+
 ## [1.0.1] - 2025-12-10
 
 ### Changed
@@ -101,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed file watcher to follow symlinks correctly
 - Deduplicated watch events for same file
 
+[2.0.0]: https://github.com/yetidevworks/ygrep/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/yetidevworks/ygrep/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/yetidevworks/ygrep/compare/v0.3.0...v1.0.0
 [0.3.0]: https://github.com/yetidevworks/ygrep/compare/v0.2.5...v0.3.0

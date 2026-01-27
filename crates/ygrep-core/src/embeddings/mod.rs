@@ -1,5 +1,5 @@
-mod model;
 mod cache;
+mod model;
 
-pub use model::{EmbeddingModel, ModelType};
 pub use cache::EmbeddingCache;
+pub use model::{EmbeddingModel, ModelType};

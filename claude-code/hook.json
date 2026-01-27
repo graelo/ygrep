@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ygrep index >> /tmp/ygrep-hook.log 2>&1 &",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

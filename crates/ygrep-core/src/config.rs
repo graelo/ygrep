@@ -143,7 +143,6 @@ impl Default for IndexerConfig {
                 "**/.venv/**".into(),
                 "**/venv/**".into(),
                 "**/bower_components/**".into(),
-
                 // Build outputs
                 "**/target/**".into(),
                 "**/dist/**".into(),
@@ -152,7 +151,6 @@ impl Default for IndexerConfig {
                 "**/_build/**".into(),
                 "**/bin/**".into(),
                 "**/obj/**".into(),
-
                 // Cache directories
                 "**/cache/**".into(),
                 "**/.cache/**".into(),
@@ -163,29 +161,24 @@ impl Default for IndexerConfig {
                 "**/.ruff_cache/**".into(),
                 "**/.phpunit.cache/**".into(),
                 "**/var/cache/**".into(),
-
                 // Log directories
                 "**/logs/**".into(),
                 "**/log/**".into(),
                 "**/*.log".into(),
-
                 // Temp directories
                 "**/tmp/**".into(),
                 "**/temp/**".into(),
                 "**/.tmp/**".into(),
-
                 // Version control
                 "**/.git/**".into(),
                 "**/.svn/**".into(),
                 "**/.hg/**".into(),
-
                 // IDE/Editor
                 "**/.idea/**".into(),
                 "**/.vscode/**".into(),
                 "**/.vs/**".into(),
                 "**/*.swp".into(),
                 "**/*.swo".into(),
-
                 // Lock files
                 "Cargo.lock".into(),
                 "package-lock.json".into(),
@@ -194,7 +187,6 @@ impl Default for IndexerConfig {
                 "composer.lock".into(),
                 "Gemfile.lock".into(),
                 "poetry.lock".into(),
-
                 // Binary/compiled files
                 "**/*.pyc".into(),
                 "**/*.pyo".into(),
@@ -204,18 +196,15 @@ impl Default for IndexerConfig {
                 "**/*.dylib".into(),
                 "**/*.dll".into(),
                 "**/*.exe".into(),
-
                 // Data files (often large)
                 "**/*.sqlite".into(),
                 "**/*.sqlite3".into(),
                 "**/*.db".into(),
-
                 // Coverage & test artifacts
                 "**/coverage/**".into(),
                 "**/.coverage/**".into(),
                 "**/htmlcov/**".into(),
                 "**/.nyc_output/**".into(),
-
                 // Images
                 "**/*.svg".into(),
                 "**/*.png".into(),
@@ -227,14 +216,12 @@ impl Default for IndexerConfig {
                 "**/*.bmp".into(),
                 "**/*.tiff".into(),
                 "**/*.psd".into(),
-
                 // Fonts
                 "**/*.woff".into(),
                 "**/*.woff2".into(),
                 "**/*.ttf".into(),
                 "**/*.otf".into(),
                 "**/*.eot".into(),
-
                 // Media
                 "**/*.mp3".into(),
                 "**/*.mp4".into(),
@@ -243,14 +230,12 @@ impl Default for IndexerConfig {
                 "**/*.webm".into(),
                 "**/*.avi".into(),
                 "**/*.mov".into(),
-
                 // Archives
                 "**/*.zip".into(),
                 "**/*.tar".into(),
                 "**/*.gz".into(),
                 "**/*.rar".into(),
                 "**/*.7z".into(),
-
                 // Documents (usually not code)
                 "**/*.pdf".into(),
                 "**/*.doc".into(),
@@ -259,13 +244,11 @@ impl Default for IndexerConfig {
                 "**/*.xlsx".into(),
                 "**/*.ppt".into(),
                 "**/*.pptx".into(),
-
                 // Minified/bundled files
                 "**/*.min.js".into(),
                 "**/*.min.css".into(),
                 "**/*.bundle.js".into(),
                 "**/*.chunk.js".into(),
-
                 // Source maps
                 "**/*.map".into(),
             ],
@@ -350,7 +333,10 @@ impl Config {
 
     /// Get the socket path, using default if not specified
     pub fn socket_path(&self) -> PathBuf {
-        self.daemon.socket_path.clone().unwrap_or_else(default_socket_path)
+        self.daemon
+            .socket_path
+            .clone()
+            .unwrap_or_else(default_socket_path)
     }
 }
 

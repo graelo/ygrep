@@ -39,17 +39,23 @@ pub fn run(
         // Hybrid search (BM25 + vector with RRF) - not supported with regex
         #[cfg(feature = "embeddings")]
         {
-            workspace.search_hybrid(query, Some(limit))
+            workspace
+                .search_hybrid(query, Some(limit))
                 .context("Hybrid search failed")?
         }
         #[cfg(not(feature = "embeddings"))]
         unreachable!()
     } else {
         // Build filters for text-only search
-        let ext_filter = if extensions.is_empty() { None } else { Some(extensions) };
+        let ext_filter = if extensions.is_empty() {
+            None
+        } else {
+            Some(extensions)
+        };
         let path_filter = if paths.is_empty() { None } else { Some(paths) };
 
-        workspace.search_filtered(query, Some(limit), ext_filter, path_filter, use_regex)
+        workspace
+            .search_filtered(query, Some(limit), ext_filter, path_filter, use_regex)
             .context("Search failed")?
     };
 

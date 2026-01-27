@@ -1,9 +1,9 @@
-mod searcher;
-mod results;
 #[cfg(feature = "embeddings")]
 mod hybrid;
+mod results;
+mod searcher;
 
-pub use searcher::{Searcher, SearchFilters};
-pub use results::{SearchResult, SearchHit, MatchType};
 #[cfg(feature = "embeddings")]
 pub use hybrid::HybridSearcher;
+pub use results::{MatchType, SearchHit, SearchResult};
+pub use searcher::{SearchFilters, Searcher};
