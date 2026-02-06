@@ -108,7 +108,20 @@ impl Workspace {
         // Open or create Tantivy index
         let schema = index::build_document_schema();
         let index = if tantivy_exists {
-            Index::open_in_dir(&index_path)?
+            match Index::open_in_dir(&index_path) {
+                Ok(idx) => idx,
+                Err(e) if create => {
+                    eprintln!(
+                        "Warning: corrupt index, recreating: {}",
+                        e
+                    );
+                    // Remove corrupted index and create fresh
+                    std::fs::remove_dir_all(&index_path)?;
+                    std::fs::create_dir_all(&index_path)?;
+                    Index::create_in_dir(&index_path, schema)?
+                }
+                Err(e) => return Err(e.into()),
+            }
         } else {
             // Create directory only when explicitly creating the index
             std::fs::create_dir_all(&index_path)?;
@@ -125,7 +138,20 @@ impl Workspace {
 
             // Load or create vector index
             let vector_index = if VectorIndex::exists(&vector_path) {
-                Arc::new(VectorIndex::load(vector_path)?)
+                match VectorIndex::load(vector_path.clone()) {
+                    Ok(vi) => Arc::new(vi),
+                    Err(e) => {
+                        eprintln!(
+                            "Warning: corrupt vector index, recreating: {}",
+                            e
+                        );
+                        // Remove corrupted vector files and create fresh
+                        if vector_path.exists() {
+                            let _ = std::fs::remove_dir_all(&vector_path);
+                        }
+                        Arc::new(VectorIndex::new(vector_path, EMBEDDING_DIM)?)
+                    }
+                }
             } else {
                 Arc::new(VectorIndex::new(vector_path, EMBEDDING_DIM)?)
             };
