@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.1] - 2026-02-06
 
+### Changed
+- `ygrep indexes list` now sorted by size (largest first) with file counts, relative timestamps, orphan markers, and `~/` shortened paths
+
 ### Fixed
 - Auto-recover from corrupt index files instead of failing with "failed to fill whole buffer" error
 - Corrupt HNSW vector index is now automatically recreated with a warning
